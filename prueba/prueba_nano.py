@@ -15,15 +15,17 @@ dt = 0
 
 height = screen.get_height()
 width = screen.get_width()
-g=10
 
-#Atributos de la particula 
+#Atributos de la particula - experimento 
 player_pos = pygame.Vector2(width/2, 150) #vector posicion 
 player_vel = pygame.Vector2(0, 0) #vector velocidad 
-player_acc = pygame.Vector2(100, g) #vector aceleración 
+player_acc = pygame.Vector2(0, 0) #vector aceleración 
 time_acc = 10 #implementacipon temproal. Cuanto tiempo está la aceleración. Por ahora solo va a afectar a la aceleración en x
 t = 0 #tiempo total del programa. Implementación temporal
-
+g=10
+player_masa = 100
+force = pygame.Vector2(10000,10000)
+force_time = 10
 
 while running:
     for event in pygame.event.get():
@@ -48,11 +50,18 @@ while running:
     if keys[pygame.K_d] and player_pos.x < max_width:
         player_pos.x += 300 * dt 
     if keys[pygame.K_q]:
-        pygame.quit()    
+        pygame.quit() 
+
+    #Aceleración en funcion del tiempo
+    if t<force_time:
+        player_acc.y = force.y / player_masa
+        player_acc.x = force.x / player_masa
+    else:
+        player_acc.y = 0
+        player_acc.x = 0
     #velocidad en funcion del tiempo
     player_vel.y += player_acc.y * dt
-    if (t < time_acc):
-        player_vel.x += player_acc.x * dt
+    player_vel.x += player_acc.x * dt
     #Posicion en funcion del tiempo
     player_pos.y += player_vel.y*dt
     player_pos.x += player_vel.x*dt
