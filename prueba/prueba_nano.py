@@ -13,7 +13,10 @@ clock = pygame.time.Clock()
 running = True
 dt = 0
 
-player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
+height = screen.get_height()
+width = screen.get_width()
+
+player_pos = pygame.Vector2(width/2, height/2)
 
 while running:
     for event in pygame.event.get():
@@ -21,10 +24,25 @@ while running:
             running = False
     #Fondo
     screen.fill("white")
-
+    radio = 30
+    max_height = height - radio
+    min_height =  radio
+    max_width = width - radio
+    min_width = radio
     #Particula y sus movimientos
-    pygame.draw.circle(screen, "red", player_pos,400)
-    
+    pygame.draw.circle(screen, "red", player_pos,radio)
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_w] and player_pos.y > min_height:
+        player_pos.y -= 300 * dt
+    if keys[pygame.K_s] and player_pos.y < max_height:
+        player_pos.y += 300 * dt
+    if keys[pygame.K_a] and player_pos.x > min_width:
+        player_pos.x -= 300 * dt
+    if keys[pygame.K_d] and player_pos.x < max_width:
+        player_pos.x += 300 * dt 
+    if keys[pygame.K_q]:
+        pygame.quit()
+
 
     #Poner el trabajo en la pantalla
     pygame.display.flip()
