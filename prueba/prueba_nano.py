@@ -15,10 +15,15 @@ dt = 0
 
 height = screen.get_height()
 width = screen.get_width()
+g=10
 
 #Atributos de la particula 
-player_pos = pygame.Vector2(width/2, height/2) #vector posicion 
-player_vel = pygame.Vector2(100, 100) #vector velocidad 
+player_pos = pygame.Vector2(width/2, 150) #vector posicion 
+player_vel = pygame.Vector2(0, 0) #vector velocidad 
+player_acc = pygame.Vector2(100, g) #vector aceleración 
+time_acc = 10 #implementacipon temproal. Cuanto tiempo está la aceleración. Por ahora solo va a afectar a la aceleración en x
+t = 0 #tiempo total del programa. Implementación temporal
+
 
 while running:
     for event in pygame.event.get():
@@ -43,17 +48,22 @@ while running:
     if keys[pygame.K_d] and player_pos.x < max_width:
         player_pos.x += 300 * dt 
     if keys[pygame.K_q]:
-        pygame.quit()
+        pygame.quit()    
+    #velocidad en funcion del tiempo
+    player_vel.y += player_acc.y * dt
+    if (t < time_acc):
+        player_vel.x += player_acc.x * dt
+    #Posicion en funcion del tiempo
     player_pos.y += player_vel.y*dt
     player_pos.x += player_vel.x*dt
-    if player_pos.y >= max_height or player_pos.y <= min_height:
+    if (player_pos.y >= max_height and player_vel.y>0) or (player_pos.y <= min_height and player_vel.y < 0):
         player_vel.y = -player_vel.y
-    if player_pos.x >= max_width or player_pos.x <= min_width:
+    if (player_pos.x >= max_width and player_vel.x>0)  or (player_pos.x <= min_width and player_vel.x<0):
         player_vel.x = -player_vel.x
-
     #Poner el trabajo en la pantalla
     pygame.display.flip()
     #Delta t mide cuanto tiempo pasa entre cada frame
     dt = clock.tick(60) / 1000
+    t += dt
 pygame.quit()
 
