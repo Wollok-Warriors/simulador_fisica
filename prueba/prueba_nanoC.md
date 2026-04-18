@@ -1,0 +1,1 @@
+El goat se encuentra ante un nuevo reto. Ahora la directiva quiere que el simulador se haga en C, por lo tanto el goat deberá arrancar de nuevo. ¿este arranque es de cero? NO, no se equivoquen, todas las batallas son aprendizages para el goat, y lo aprendido previamente le servira para el futuro.
