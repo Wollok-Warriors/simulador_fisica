@@ -1,1 +1,0 @@
-gcc main.c -o out `pkg-config --cflags --libs sdl3`

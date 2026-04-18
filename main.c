@@ -58,9 +58,6 @@ void close_SDL(SDL_Window* window, SDL_Renderer* renderer) {
 }
 
 int main(int argc, char* argv[]) {
-
-	printf("hola");
-
 	SDL_Window* window = NULL;
 	SDL_Renderer* renderer = NULL;
 	init(&window, &renderer);
