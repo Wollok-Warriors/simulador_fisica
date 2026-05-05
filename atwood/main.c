@@ -9,7 +9,6 @@
 
 #define GRAVITY 20
 
-
 #define POLLEY_POS_X 400
 #define POLLEY_POS_Y 200
 
@@ -17,70 +16,117 @@
 
 #define STRING_LENGTH 600
 
-#define REST_HEIGHT (STRING_LENGTH - PI * POLLEY_R)/2
-
 #define BLOCK_WIDTH 50
 #define BLOCK_HEIGHT 30
 
-#define	INIT_HEIGHT_1 0
-#define INIT_HEIGHT_2 0
+#define	REL_HEIGHT_1 0
+#define REL_HEIGHT_2 0
 
-#define INIT_VEL_1 70
-#define INIT_VEL_2 -70
+#define VEL_1 70
+#define VEL_2 -70
 
 #define MASS_1 100
 #define MASS_2 200
-
 
 typedef struct {
 	Vector2 pos;
 	float dy;
 	float vel;
 	float mass;
+	float width;
+	float height;
 } Block;
 
+typedef struct {
+	Vector2 pos;
+	float radius;
+	float string_len;
+} Polley;
 
-void integrate_block(Block* b, float acc, float dt) {
+void integrate_block(Block* b, Polley* polley, float acc, float dt) 
+{
 	b->vel += acc * dt;
 	b->dy += b->vel * dt;
-	b->pos.y = POLLEY_POS_Y + REST_HEIGHT + b->dy;
+	b->pos.y = polley->pos.y + (polley->string_len - PI * polley->radius)/2 + b->dy;
 }
 
-void draw_block(Block* b) {
+void draw_block(Block* b) 
+{
 	DrawRectangle(
 			b->pos.x,
 			b->pos.y,
-			BLOCK_WIDTH,
-			BLOCK_HEIGHT,
+			b->width,
+			b->height,
 			GRAY
 		     );
 	DrawCircle(
-			b->pos.x + BLOCK_WIDTH/2,
-			b->pos.y + BLOCK_HEIGHT/2,
+			b->pos.x + b->width/2,
+			b->pos.y + b->height/2,
 			4,
 			RED
 		  );
 }
 
-void draw_string(Block* b1, Block* b2) {
+void draw_polley(Polley* polley, Block* b1, Block* b2) 
+{
+	DrawCircle(polley->pos.x, polley->pos.y, polley->radius, BLACK);
 	DrawLine(
-			POLLEY_POS_X - POLLEY_R,
-			POLLEY_POS_Y,
-			POLLEY_POS_X - POLLEY_R,
+			polley->pos.x - polley->radius,
+			polley->pos.y,
+			polley->pos.x - polley->radius,
 			b1->pos.y,
 			BLACK
 		);
 
 	DrawLine(
-			POLLEY_POS_X + POLLEY_R,
-			POLLEY_POS_Y,
-			POLLEY_POS_X + POLLEY_R,
+			polley->pos.x + polley->radius,
+			polley->pos.y,
+			polley->pos.x + polley->radius,
 			b2->pos.y,
 			BLACK
 		);
 }
 
-int main(void) {
+void update_state(float polley_x, float polley_y, float polley_radius, float string_length, float block_width, float block_height, float mass1, float mass2, Block* b1, Block* b2, Polley* polley)
+{
+	polley->pos.x = polley_x;
+	polley->pos.y = polley_y;
+	polley->radius = polley_radius;
+	polley->string_len = string_length;
+	
+	b1->mass = mass1;
+	b1->pos.x = polley_x - polley_radius - block_width/2;
+	b1->pos.y = polley_y + (string_length - PI * polley_radius)/2;
+	b1->width = block_width;
+	b1->height = block_height;
+
+	b2->mass = mass2;
+	b2->pos.x = polley_x - polley_radius - block_width/2;
+	b2->pos.y = polley_y + (string_length - PI * polley_radius)/2;
+	b2->width = block_width;
+	b2->height = block_height;
+}
+
+int main(void) 
+{
+	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Polley system");
+	SetTargetFPS(60);
+
+	float gravity;
+	float polley_x;
+	float polley_y;
+	float polley_radius;
+	float string_length;
+	float rest_height;
+	float block_width;
+	float block_height;
+	float mass1;
+	float mass2;
+	float vel1;
+	float vel2;
+	float rel_height1;
+	float rel_height2;
+	
 	float dt;
 	float time;
 	char str[16];
@@ -88,30 +134,55 @@ int main(void) {
 	bool end;
 	float acc;
 
-	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Polley system");
-	SetTargetFPS(60);
-	
-	Block mass1 = {
-		.dy = INIT_HEIGHT_1,
-		.vel = INIT_VEL_1,
-		.mass = MASS_1,
+	gravity = GRAVITY;
+	polley_x = POLLEY_POS_X;
+	polley_y = POLLEY_POS_Y;
+	polley_radius = POLLEY_R;
+	string_length = STRING_LENGTH;
+	rest_height = (string_length - PI * polley_radius)/2;
+	block_width = BLOCK_WIDTH;
+	block_height = BLOCK_HEIGHT;
+	mass1 = MASS_1;
+	mass2 = MASS_2;
+	vel1 = VEL_1;
+	vel2 = VEL_2;
+	rel_height1 = REL_HEIGHT_1;
+	rel_height2 = REL_HEIGHT_2;
+
+	Polley polley = {
 		.pos = {
-			.x = POLLEY_POS_X - POLLEY_R - BLOCK_WIDTH/2,
-			.y = POLLEY_POS_Y + REST_HEIGHT,
+			.x = polley_x,
+			.y = polley_y,
 		},
+		.radius = polley_radius,
+		.string_len = string_length,
 	};
 
-	Block mass2 = {
-		.dy = INIT_HEIGHT_2,
-		.vel = INIT_VEL_2,
-		.mass = MASS_2,
+	Block b1 = {
+		.dy = rel_height1,
+		.vel = vel1,
+		.mass = mass1,
 		.pos = {
-			.x = POLLEY_POS_X + POLLEY_R - BLOCK_WIDTH/2,
-			.y = POLLEY_POS_Y + REST_HEIGHT,
+			.x = polley.pos.x - polley.radius - block_width/2,
+			.y = polley.pos.y + rest_height,
 		},
+		.width = block_width,
+		.height = block_height,
 	};
 
-	acc = GRAVITY*(mass1.mass - mass2.mass)/(mass1.mass + mass2.mass);
+	Block b2 = {
+		.dy = rel_height2,
+		.vel = vel2,
+		.mass = mass2,
+		.pos = {
+			.x = polley.pos.x + polley.radius - block_width/2,
+			.y = polley.pos.y + rest_height,
+		},
+		.width = block_width,
+		.height = block_height,
+	};
+
+	acc = gravity*(b1.mass - b2.mass)/(b1.mass + b2.mass);
 	paused = true;
 	time = 0;
 	dt = 0;
@@ -126,40 +197,37 @@ int main(void) {
 		if(!paused) {
 			time += dt;
 
-			integrate_block(&mass1, acc, dt);
-			integrate_block(&mass2, -acc, dt);
+			integrate_block(&b1, &polley, acc, dt);
+			integrate_block(&b2, &polley, -acc, dt);
 
-			if(mass1.pos.y <= POLLEY_POS_Y) {
-				if(mass1.mass < mass2.mass) {
+			if(b1.pos.y <= polley_y) {
+				if(b1.mass < b2.mass) {
 					end = true;
 					paused = true;
 				}
-				mass1.dy = -REST_HEIGHT;
-				mass2.dy = REST_HEIGHT;
-				mass1.vel = 0;
-				mass2.vel = 0;
+				b1.dy = -rest_height;
+				b2.dy = rest_height;
+				b1.vel = 0;
+				b2.vel = 0;
 			}
-			if(mass2.pos.y <= POLLEY_POS_Y) {
-				if(mass2.mass < mass1.mass) {
+			if(b2.pos.y <= polley_y) {
+				if(b2.mass < b1.mass) {
 					end = true;
 					paused = true;
 				}
-				mass2.dy = -REST_HEIGHT;
-				mass1.dy = REST_HEIGHT;
-				mass2.vel = 0;
-				mass1.vel = 0;
+				b2.dy = -rest_height;
+				b1.dy = rest_height;
+				b2.vel = 0;
+				b1.vel = 0;
 			}
 		}
 
 		BeginDrawing();
 		ClearBackground(RAYWHITE);
 
-		draw_block(&mass1);
-		draw_block(&mass2);
-
-		DrawCircle(POLLEY_POS_X, POLLEY_POS_Y, POLLEY_R, BLACK);
-
-		draw_string(&mass1, &mass2);
+		draw_block(&b1);
+		draw_block(&b2);
+		draw_polley(&polley, &b1, &b2);
 
 		DrawFPS(0, 0);
 		sprintf(str, "Time: %.5f", time);
