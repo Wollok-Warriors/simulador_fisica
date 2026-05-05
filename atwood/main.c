@@ -10,7 +10,6 @@
 #define GRAVITY 20
 
 
-
 #define POLLEY_POS_X 400
 #define POLLEY_POS_Y 200
 
@@ -26,12 +25,11 @@
 #define	INIT_HEIGHT_1 0
 #define INIT_HEIGHT_2 0
 
-#define INIT_VEL_1 10
-#define INIT_VEL_2 -10
+#define INIT_VEL_1 70
+#define INIT_VEL_2 -70
 
 #define MASS_1 100
 #define MASS_2 200
-
 
 
 typedef struct {
@@ -42,11 +40,52 @@ typedef struct {
 } Block;
 
 
+void integrate_block(Block* b, float acc, float dt) {
+	b->vel += acc * dt;
+	b->dy += b->vel * dt;
+	b->pos.y = POLLEY_POS_Y + REST_HEIGHT + b->dy;
+}
+
+void draw_block(Block* b) {
+	DrawRectangle(
+			b->pos.x,
+			b->pos.y,
+			BLOCK_WIDTH,
+			BLOCK_HEIGHT,
+			GRAY
+		     );
+	DrawCircle(
+			b->pos.x + BLOCK_WIDTH/2,
+			b->pos.y + BLOCK_HEIGHT/2,
+			4,
+			RED
+		  );
+}
+
+void draw_string(Block* b1, Block* b2) {
+	DrawLine(
+			POLLEY_POS_X - POLLEY_R,
+			POLLEY_POS_Y,
+			POLLEY_POS_X - POLLEY_R,
+			b1->pos.y,
+			BLACK
+		);
+
+	DrawLine(
+			POLLEY_POS_X + POLLEY_R,
+			POLLEY_POS_Y,
+			POLLEY_POS_X + POLLEY_R,
+			b2->pos.y,
+			BLACK
+		);
+}
+
 int main(void) {
 	float dt;
 	float time;
 	char str[16];
 	bool paused;
+	bool end;
 	float acc;
 
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Polley system");
@@ -76,34 +115,35 @@ int main(void) {
 	paused = true;
 	time = 0;
 	dt = 0;
+	end = false;
 
 	while (!WindowShouldClose()) {
-		if (IsKeyPressed(KEY_SPACE)) {
+		dt = GetFrameTime();
+		if (IsKeyPressed(KEY_SPACE) && !end) {
 			paused = !paused;
 		}
 
 		if(!paused) {
-			dt = GetFrameTime();
 			time += dt;
 
-			mass1.vel += acc * dt;
-			mass2.vel -= acc * dt;
-
-			mass1.dy += mass1.vel * dt;
-			mass2.dy += mass2.vel * dt;
-
-			mass1.pos.y = POLLEY_POS_Y + REST_HEIGHT + mass1.dy;
-			mass2.pos.y = POLLEY_POS_Y + REST_HEIGHT + mass2.dy;
+			integrate_block(&mass1, acc, dt);
+			integrate_block(&mass2, -acc, dt);
 
 			if(mass1.pos.y <= POLLEY_POS_Y) {
-				paused = true;
+				if(mass1.mass < mass2.mass) {
+					end = true;
+					paused = true;
+				}
 				mass1.dy = -REST_HEIGHT;
 				mass2.dy = REST_HEIGHT;
 				mass1.vel = 0;
 				mass2.vel = 0;
 			}
 			if(mass2.pos.y <= POLLEY_POS_Y) {
-				paused = true;
+				if(mass2.mass < mass1.mass) {
+					end = true;
+					paused = true;
+				}
 				mass2.dy = -REST_HEIGHT;
 				mass1.dy = REST_HEIGHT;
 				mass2.vel = 0;
@@ -114,53 +154,12 @@ int main(void) {
 		BeginDrawing();
 		ClearBackground(RAYWHITE);
 
-
-		DrawRectangle(
-				mass1.pos.x,
-				mass1.pos.y,
-				BLOCK_WIDTH,
-				BLOCK_HEIGHT,
-				GRAY
-			     );
-		DrawCircle(
-				mass1.pos.x + BLOCK_WIDTH/2,
-				mass1.pos.y + BLOCK_HEIGHT/2,
-				4,
-				RED
-			 );
-
-		DrawRectangle(
-				mass2.pos.x,
-				mass2.pos.y,
-				BLOCK_WIDTH,
-				BLOCK_HEIGHT,
-				GRAY
-			     );
-		DrawCircle(
-				mass2.pos.x + BLOCK_WIDTH/2,
-				mass2.pos.y + BLOCK_HEIGHT/2,
-				4,
-				RED
-			 );
+		draw_block(&mass1);
+		draw_block(&mass2);
 
 		DrawCircle(POLLEY_POS_X, POLLEY_POS_Y, POLLEY_R, BLACK);
 
-		DrawLine(
-			POLLEY_POS_X - POLLEY_R,
-			POLLEY_POS_Y,
-			POLLEY_POS_X - POLLEY_R,
-			mass1.pos.y,
-			BLACK
-			);
-
-		DrawLine(
-			POLLEY_POS_X + POLLEY_R,
-			POLLEY_POS_Y,
-			POLLEY_POS_X + POLLEY_R,
-			mass2.pos.y,
-			BLACK
-			);
-
+		draw_string(&mass1, &mass2);
 
 		DrawFPS(0, 0);
 		sprintf(str, "Time: %.5f", time);
